@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ServerConfigState, Peer } from './types';
-import { generateKeyPair } from './utils/wireguard';
+import { generateKeyPair, getPublicKey, generateServerConfigText } from './utils/wireguard';
 import { ServerConfig } from './components/ServerConfig';
 import { PeerManager } from './components/PeerManager';
 import { PeerQRCodeModal } from './components/PeerQRCodeModal';
@@ -14,7 +14,14 @@ const getInitialConfig = (): ServerConfigState => {
   const saved = localStorage.getItem('wg_server_config');
   if (saved) {
     try {
-      return JSON.parse(saved);
+      const parsed = JSON.parse(saved);
+      if (!parsed.endpointHost) {
+        parsed.endpointHost = 'vpn.physikcraft.de';
+      }
+      if (parsed.privateKey) {
+        parsed.publicKey = getPublicKey(parsed.privateKey);
+      }
+      return parsed;
     } catch (e) {
       console.error('Failed to parse saved server config:', e);
     }
@@ -26,14 +33,14 @@ const getInitialConfig = (): ServerConfigState => {
     listenPort: 51820,
     subnet: '10.8.0.0/24',
     serverIP: '10.8.0.1/24',
-    endpointHost: '',
+    endpointHost: 'vpn.physikcraft.de',
     privateKey: keys.privateKey,
     publicKey: keys.publicKey,
     dns: '1.1.1.1, 8.8.8.8',
-    mtu: 1420,
+    mtu: 1360,
     persistentKeepalive: 25,
-    postUp: 'iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE',
-    postDown: 'iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE',
+    postUp: '',
+    postDown: '',
     isRunning: false,
   };
 };
@@ -43,7 +50,13 @@ const getInitialPeers = (): Peer[] => {
   const saved = localStorage.getItem('wg_server_peers');
   if (saved) {
     try {
-      return JSON.parse(saved);
+      const parsed: Peer[] = JSON.parse(saved);
+      return parsed.map((peer) => {
+        if (peer.privateKey) {
+          peer.publicKey = getPublicKey(peer.privateKey);
+        }
+        return peer;
+      });
     } catch (e) {
       console.error('Failed to parse saved peers:', e);
     }
@@ -57,10 +70,17 @@ export function App() {
   const [peers, setPeers] = useState<Peer[]>(getInitialPeers);
   const [selectedQRPeer, setSelectedQRPeer] = useState<Peer | null>(null);
 
-  // Auto-save Config to LocalStorage
+  // Auto-save Config to LocalStorage & Sync wg0.conf with running WireGuard service
   useEffect(() => {
     localStorage.setItem('wg_server_config', JSON.stringify(config));
-  }, [config]);
+    if ((window as any).electronAPI?.startTunnel && config.isRunning) {
+      const fullConf = generateServerConfigText(config, peers);
+      (window as any).electronAPI.startTunnel({
+        interfaceName: config.interfaceName,
+        configContent: fullConf,
+      });
+    }
+  }, [config, peers]);
 
   // Auto-save Peers to LocalStorage
   useEffect(() => {
