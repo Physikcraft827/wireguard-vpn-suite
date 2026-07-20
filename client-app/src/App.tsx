@@ -5,35 +5,53 @@ import { ConfigImporter } from './components/ConfigImporter';
 import { StatusDashboard } from './components/StatusDashboard';
 import { SystemTraySettings } from './components/SystemTraySettings';
 import { TrafficSpeedGraph } from './components/TrafficSpeedGraph';
-import { Shield, Settings, Activity } from 'lucide-react';
+import { Shield, Settings, Activity, FileText } from 'lucide-react';
 import './App.css';
 
-const defaultConfig: VpnConfig = {
-  name: 'Frankfurt-WG-01',
-  rawContent: `[Interface]\nPrivateKey = cG9zZWRp... \nAddress = 10.8.0.2/32\nDNS = 1.1.1.1\n\n[Peer]\nPublicKey = X9/3a0qL...\nEndpoint = 203.0.113.10:51820\nAllowedIPs = 0.0.0.0/0`,
-  endpoint: '203.0.113.10:51820',
-  clientIP: '10.8.0.2/32',
-  dns: '1.1.1.1',
-  publicKey: 'X9/3a0qL12nK5+Pq7mZ8rT9u1v2w3x4y5z6a7b8c9d0=',
+const getInitialClientConfig = (): VpnConfig => {
+  const saved = localStorage.getItem('wg_client_active_config');
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch (e) {
+      console.error('Failed to parse client config:', e);
+    }
+  }
+  return {
+    name: 'No Profile Loaded',
+    rawContent: '',
+    endpoint: 'Not Configured',
+    clientIP: '10.8.0.x',
+    dns: '1.1.1.1',
+    publicKey: 'Import a .conf profile below',
+  };
 };
 
 export function App() {
   const [activeTab, setActiveTab] = useState<'main' | 'settings'>('main');
   const [status, setStatus] = useState<ConnectionState>('disconnected');
-  const [config, setConfig] = useState<VpnConfig>(defaultConfig);
+  const [config, setConfig] = useState<VpnConfig>(getInitialClientConfig);
+
+  // Auto-save active config to LocalStorage
+  useEffect(() => {
+    if (config.rawContent) {
+      localStorage.setItem('wg_client_active_config', JSON.stringify(config));
+    }
+  }, [config]);
 
   const [stats, setStats] = useState<VpnStats>({
     durationSeconds: 0,
-    publicIP: '198.51.100.44',
-    pingMs: 18,
-    rxBytes: 12400000,
-    txBytes: 4210000,
+    publicIP: 'Disconnected',
+    pingMs: 0,
+    rxBytes: 0,
+    txBytes: 0,
     downloadSpeedKb: 0,
     uploadSpeedKb: 0,
   });
 
   const [history, setHistory] = useState<{ download: number; upload: number }[]>([]);
 
+  // Connection timer & traffic simulator
   useEffect(() => {
     let interval: any = null;
     if (status === 'connected') {
@@ -68,6 +86,15 @@ export function App() {
     return () => clearInterval(interval);
   }, [status]);
 
+  // Listen to system tray quick actions if available
+  useEffect(() => {
+    if ((window as any).clientAPI) {
+      (window as any).clientAPI.onTrayToggle(() => {
+        handleToggleConnection();
+      });
+    }
+  }, [status, config]);
+
   const handleToggleConnection = async () => {
     if (status === 'disconnected') {
       setStatus('connecting');
@@ -100,6 +127,7 @@ export function App() {
 
   return (
     <div className="client-app-layout">
+      {/* Top Navigation */}
       <header className="client-header">
         <div className="brand">
           <Shield className="brand-logo icon-cyan" size={24} />
@@ -121,6 +149,7 @@ export function App() {
         </div>
       </header>
 
+      {/* App Body */}
       <main className="client-body">
         {activeTab === 'main' ? (
           <>
