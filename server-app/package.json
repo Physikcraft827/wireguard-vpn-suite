@@ -7,7 +7,19 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "dist": "npm run build && electron-builder --win nsis",
     "electron:dev": "concurrently \"vite\" \"electron .\""
+  },
+  "build": {
+    "appId": "com.wireguard.serverstudio",
+    "productName": "WireGuard Server Studio",
+    "directories": {
+      "output": "dist-executable"
+    },
+    "win": {
+      "target": "nsis",
+      "requestedExecutionLevel": "requireAdministrator"
+    }
   },
   "dependencies": {
     "lucide-react": "^0.344.0",
