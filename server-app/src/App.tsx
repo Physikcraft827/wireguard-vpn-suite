@@ -26,6 +26,7 @@ const getInitialConfig = (): ServerConfigState => {
     listenPort: 51820,
     subnet: '10.8.0.0/24',
     serverIP: '10.8.0.1/24',
+    endpointHost: '',
     privateKey: keys.privateKey,
     publicKey: keys.publicKey,
     dns: '1.1.1.1, 8.8.8.8',
