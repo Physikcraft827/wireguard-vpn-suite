@@ -3,6 +3,11 @@ const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
 
+// Disable hardware acceleration to prevent GPU process crash in VM/RDP environments
+app.disableHardwareAcceleration();
+app.commandLine.appendSwitch('disable-gpu');
+app.commandLine.appendSwitch('no-sandbox');
+
 let mainWindow;
 
 function createWindow() {
