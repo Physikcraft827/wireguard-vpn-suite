@@ -1,0 +1,17 @@
+[package]
+name = "wireguard_vpn_backend"
+version = "0.1.0"
+edition = "2021"
+description = "Native Rust Backend for WireGuard Tunnel Control & Key Generation (Tauri v2)"
+
+[dependencies]
+tauri = { version = "2.0.0-rc", features = ["tray-icon"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+x25519-dalek = { version = "2.0", features = ["static_secrets"] }
+base64 = "0.21"
+rand = "0.8"
+tokio = { version = "1.0", features = ["full"] }
+
+[build-dependencies]
+tauri-build = "2.0.0-rc"
