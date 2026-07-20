@@ -1,0 +1,25 @@
+{
+  "name": "wireguard-vpn-suite",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Comprehensive WireGuard VPN Suite: Server Management Studio & Cross-Platform Client App",
+  "scripts": {
+    "dev:server": "cd server-app && npm run dev",
+    "dev:client": "cd client-app && npm run dev",
+    "build:server": "cd server-app && npm run build",
+    "build:client": "cd client-app && npm run build"
+  },
+  "keywords": [
+    "wireguard",
+    "vpn",
+    "server-management",
+    "vpn-client",
+    "wintun",
+    "electron",
+    "tauri",
+    "react",
+    "typescript"
+  ],
+  "author": "physikcraft827",
+  "license": "MIT"
+}
