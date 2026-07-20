@@ -21,8 +21,11 @@ function createWindow() {
     },
   });
 
-  const startUrl = process.env.VITE_DEV_SERVER_URL || `file://${path.join(__dirname, '../dist/index.html')}`;
-  mainWindow.loadURL(startUrl);
+  if (process.env.VITE_DEV_SERVER_URL) {
+    mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
+  } else {
+    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+  }
 
   mainWindow.on('close', (event) => {
     if (!app.isQuitting) {
@@ -37,7 +40,8 @@ function createWindow() {
 function createTray() {
   if (tray) return;
 
-  tray = new Tray(path.join(__dirname, '../public/shield.svg'));
+  const iconPath = path.join(__dirname, 'icon.png');
+  tray = new Tray(fs.existsSync(iconPath) ? iconPath : path.join(__dirname, '../public/shield.svg'));
 
   const contextMenu = Menu.buildFromTemplate([
     { label: 'WireGuard Client VPN', enabled: false },
